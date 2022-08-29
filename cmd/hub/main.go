@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jclasley/termhub/models/panel"
 	"github.com/jclasley/termhub/plugins/spotify"
@@ -8,6 +11,7 @@ import (
 
 func main() {
 	getFlags()
+	cfg := GetConfig()
 
 	// DEBUG:
 	var children []tea.Model
@@ -16,9 +20,16 @@ func main() {
 	}
 
 	tea.LogToFile("./log.txt", "DEBUG: ")
-	model := spotify.New()
+	sModel := spotify.New(cfg.SpotifyClientID, cfg.SpotifySecret)
+
+	http.HandleFunc("/spotify/redirect", sModel.OauthHandler)
 
 	if err := tea.NewProgram(spotify.New()).Start(); err != nil {
 		panic(err)
 	}
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func setupOauthRoutes() {
+
 }

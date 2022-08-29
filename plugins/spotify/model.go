@@ -2,18 +2,39 @@ package spotify
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/pkg/browser"
+	"golang.org/x/oauth2"
+
 	"net/http"
 )
 
 type Model struct {
-	title  string
-	artist string
-	client *http.Client
+	title    string
+	artist   string
+	client   *http.Client
+	oauthCfg *oauth2.Config
 }
 
-func New() Model {
-	oauthToken()
-	return Model{}
+func New(clientID, clientSecret string) Model {
+	cfg := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint: oauth2.Endpoint{
+			TokenURL: "https://accounts.spotify.com/api/token",
+			AuthURL:  "https://accounts.spotify.com/authorize",
+		},
+		RedirectURL: "http://localhost:8080/redirect",
+		Scopes:      []string{"user-read-playback-state"},
+	}
+
+	url := cfg.AuthCodeURL("state", oauth2.AccessTypeOffline)
+
+	// Open the authorization URL in the user's browser
+	if err := browser.OpenURL(url); err != nil {
+		panic(err)
+	}
+
+	return Model{oauthCfg: cfg}
 }
 
 type updateTokenMsg struct{}
@@ -37,13 +58,4 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	return ""
-}
-
-func (m *Model) SetClient(c *http.Client) {
-	m.client = c
-}
-
-func (m *Model) OauthHandler(req *http.Request, w http.ResponseWriter) error {
-	code := req.URL.Query().Get("code")
-	tok, err :=
 }

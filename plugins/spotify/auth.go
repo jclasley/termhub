@@ -1,10 +1,12 @@
 package spotify
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/pkg/browser"
-	"golang.org/x/oauth2"
+	"fmt"
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 func getToken() string {
@@ -32,24 +34,16 @@ func getToken() string {
 }
 
 func oauthToken() *oauth2.Config {
-	//ctx := context.Background()
-	cfg := &oauth2.Config{
-		ClientID:     "6e6edf8d952f42fca28dc9f5f2f8751f",
-		ClientSecret: "9059472d718c49f1ac31acb8926d6a5f",
-		Endpoint: oauth2.Endpoint{
-			TokenURL: "https://accounts.spotify.com/api/token",
-			AuthURL:  "https://accounts.spotify.com/authorize",
-		},
-		RedirectURL: "http://localhost:8080/redirect",
-		Scopes:      []string{"user-read-playback-state"},
-	}
 
-	url := cfg.AuthCodeURL("state", oauth2.AccessTypeOffline)
+}
 
-	// Open the authorization URL in the user's browser
-	if err := browser.OpenURL(url); err != nil {
+func (m *Model) OauthHandler(w http.ResponseWriter, req *http.Request) {
+	code := req.URL.Query().Get("code")
+	tok, err := m.oauthCfg.Exchange(context.Background(), code, oauth2.AccessTypeOffline)
+	if err != nil {
 		panic(err)
 	}
 
-	return cfg
+	m.client = m.oauthCfg.Client(context.Background(), tok)
+	fmt.Fprintf(w, "Success! You can now close this window.")
 }
