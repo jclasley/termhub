@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/jclasley/termhub/models/grid"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/zmb3/spotify"
 )
@@ -34,8 +35,10 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.w, m.h = msg.Width, msg.Height
+	case grid.ComponentSize:
+		playerStyle.Height(msg.Height).Width(msg.Width)
+		log.Printf("spotify w: %d\nspotify h: %d\n", msg.Width, msg.Height)
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
@@ -116,12 +119,12 @@ func (m Model) View() string {
 		"    " + rightButtonStyle.Render(next))
 
 	// zone.Scan should be in global manager
-	return zone.Scan(playerStyle.Width(m.w).Height(m.h).Render(
-		strings.Repeat("\n", (m.h/2)-3) + songStyle.Render(song) + "\n" + buttonZone))
+	log.Println(m.h, m.w)
+	return playerStyle.Render(strings.Repeat("\n", playerStyle.GetHeight()/2-3) + songStyle.Render(song) + "\n" + buttonZone)
 }
 
 var playerStyle = lipgloss.NewStyle().
-	Align(lipgloss.Center)
+	Align(lipgloss.Center).Border(lipgloss.RoundedBorder())
 
 var songStyle = lipgloss.NewStyle().
 	Margin(1)

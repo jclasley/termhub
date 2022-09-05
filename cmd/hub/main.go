@@ -3,7 +3,8 @@ package main
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jclasley/termhub/internal"
-	"github.com/jclasley/termhub/models/layout"
+	"github.com/jclasley/termhub/models"
+	"github.com/jclasley/termhub/models/grid"
 	"github.com/jclasley/termhub/models/panel"
 	"github.com/jclasley/termhub/plugins/spotify"
 	zone "github.com/lrstanley/bubblezone"
@@ -23,12 +24,18 @@ func main() {
 
 	spotifyClient := spotify.ListenForCode(cfg.SpotifyClientID, cfg.SpotifySecret)
 	sModel := spotify.New(spotifyClient)
-	model := layout.New(sModel)
+
+	bottomRight := models.New("bottom right")
+
+	gridModel := grid.New(2, 2, map[grid.Position]tea.Model{
+		grid.Position{Row: 0, Col: 0}: sModel,
+		grid.Position{Row: 1, Col: 1}: bottomRight,
+	})
 
 	// DEBUG:
 	tea.LogToFile("log.txt", "DEBUG: ")
 
-	if err := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion()).Start(); err != nil {
+	if err := tea.NewProgram(gridModel, tea.WithAltScreen(), tea.WithMouseCellMotion()).Start(); err != nil {
 		panic(err)
 	}
 
